@@ -7,26 +7,26 @@ from random import randint
 
 from .target import Target
 from .player import Player
+from .game_config import Dimensions, GameConfig, PlayerConfig, TargetConfig, EntityConfig
 
 
 class GameEngine:
-    def __init__(self, screen_width: int, screen_height: int) -> None:
-        self.screen_width: int = screen_width
-        self.screen_height: int = screen_height
-
+    def __init__(self, game_config: GameConfig) -> None:
+        self.config: GameConfig = game_config
+                
         self.screen: Surface = None
         self.target_image: Surface = None
         
         self.is_running: bool = False
         self.counter: int = 0
 
-        self.max_targets: int = 5
+        self.max_targets: int = game_config.max_targets
 
     def setup(self) -> None:
         init()
-        self.screen = display.set_mode((self.screen_width, self.screen_height))
+        self.screen = display.set_mode((self.config.screen_size.x, self.config.screen_size.y))
         # Timer setup
-        self.counter = 120
+        self.counter = self.config.game_time
         time.set_timer(USEREVENT, 1000)
     
     def create_targets(self, count: int = 5) -> list[Target]:
@@ -37,20 +37,24 @@ class GameEngine:
 
     def create_target(self) -> Target:
         if self.target_image is None:
-            self.target_image = scale(image.load('assets/target_IMG.png').convert_alpha(), (30, 30))
+            self.target_image = image.load('assets/target_IMG.png').convert_alpha()
+
+        position = Dimensions(
+            x=randint(0, self.config.screen_size.x),
+            y=randint(0, self.config.screen_size.y)
+        )
 
         return Target(
-            screen_height=self.screen_height, 
-            screen_width=self.screen_width, 
-            image=self.target_image)
+            starting_position=position,
+            config=self.config.target_config)
 
     def display_score_and_timer(self, player: Player) -> None:
         # Display score and timer
-        font = SysFont(None, 36)
+        font = SysFont(None, self.config.font_size)
         score_text = font.render('Score: {}'.format(player.score), True, "WHITE")
         timer_text = font.render('Timer: {}'.format(self.counter), True, "WHITE")
         self.screen.blit(score_text, (10, 10))
-        self.screen.blit(timer_text, (10, 50))
+        self.screen.blit(timer_text, (10, 10 + self.config.font_size + 4))
 
     def display_debug_info(self, entity: Player | Target, offset: int = 0) -> None:
         font = SysFont(None, 15)
@@ -76,6 +80,17 @@ class GameEngine:
             colliding = player.is_colliding_with(new_target)
         return new_target
 
+    def get_smallest_target_size(self, targets: list[Target]) -> int:
+        smallest = self.config.target_config.max_width
+        for target in targets:
+            if target.width < smallest:
+                smallest = target.width
+        return smallest
+
+    def eatable_target_exists(self, targets: list[Target], player: Player):
+        smallest_target_width = self.get_smallest_target_size(targets=targets)
+        return player.width >= smallest_target_width
+
     def run(self, player: Player) -> None:
         # Main game loop
         self.is_running = True
@@ -89,23 +104,25 @@ class GameEngine:
                     self.counter -= 1
                     if self.counter <= 0:
                         # Game reset logic
-                        self.counter = 120  # Reset counter
+                        self.counter = self.config.game_time  # Reset counter
                         player.reset(
-                            screen_width=self.screen_width, 
-                            screen_height=self.screen_height)
+                            new_position=Dimensions(
+                                x=self.config.screen_size.x // 2, 
+                                y=self.config.screen_size.y // 2)
+                           )
                         
-                        targets = self.create_targets(count=5)  # Reinitialize targets
+                        targets = self.create_targets(count=self.max_targets)  # Reinitialize targets
 
                 if pygame_event.type == QUIT:
                     self.is_running = False
 
             self.screen.fill((0, 0, 0))
-            player.move(self.screen)
+            player.move(self.config.screen_size)
             player.draw(self.screen)
 
             offset_multiplier = 1 # This is just for debug - not for the actual gameplay
             for target in targets:
-                target.move(screen_height=self.screen_height, screen_width=self.screen_width)
+                target.move(screen_size=self.config.screen_size)
                 target.draw(screen=self.screen)
                 
                 self.display_debug_info(entity=target, offset=30 * offset_multiplier)
@@ -117,8 +134,8 @@ class GameEngine:
                         target.get_eaten()
             
             targets = self.get_surviving_targets(targets=targets)
-            
-            if len(targets) < self.max_targets:
+                        
+            if len(targets) < self.max_targets or not self.eatable_target_exists(targets=targets, player=player):
                 rng = randint(1,100)
                 # 1% chance a new target will spawn - adjust the number below to improve the chances
                 if rng > 99:

@@ -1,41 +1,29 @@
 from pygame.transform import scale
 from pygame import Surface, key, K_UP, K_DOWN, K_LEFT, K_RIGHT, Rect, image
-from .target import Target
+from .game_config import PlayerConfig, Dimensions
+from .entity import Entity
 
 
 # Player class
-class Player:
-    def __init__(self, screen_width: float, screen_height: float, image_path: str):
-        self.width: int = 30
-        self.max_width: int = 100
-        self.x: int = screen_width // 2
-        self.y: int = screen_height // 2
-        self.move_speed: int = 5
+class Player(Entity):
+    def __init__(self, starting_position: Dimensions, config: PlayerConfig):
+        super().__init__(
+            starting_position=starting_position,
+            entity_max_width=config.max_width,
+            entity_width=config.min_width,
+            image_path=config.image_path
+        )
 
-        self.score: int = 0
-        
-        self.image: Surface = image.load(image_path).convert_alpha()
-        self.scaled_image: Surface = scale(self.image, (self.width, self.width))
-        self.hit_box: Rect = self.get_hit_box(x=self.x, y=self.y)
-        
-    def get_hit_box(self, x: int, y: int) -> Rect:
-        return self.scaled_image.get_rect(center=(x, y))
+        self.config: PlayerConfig = config
+        self.move_speed: int = config.min_speed
+        self.score: int = config.score
 
-    def reset(self,screen_width: float, screen_height: float):
-        self.width = 30
-        self.score = 0
-        self.move_speed = 5
+    def reset(self, new_position: Dimensions):
+        self.width = self.config.min_width
+        self.score = self.config.score
+        self.move_speed = self.config.min_speed
         self.scaled_image = scale(self.image, (self.width, self.width))
-        self.hit_box = self.get_hit_box(x=screen_width // 2, y=screen_height // 2)
-
-    def is_colliding_with(self, target: Target) -> bool:
-        return self.hit_box.colliderect(target.hit_box)
-    
-    def is_larger_than(self, target: Target) -> bool:
-        return self.hit_box.width >= target.hit_box.width
-
-    def draw(self, screen: Surface) -> None:
-        screen.blit(self.scaled_image, self.hit_box.topleft)
+        self.hit_box = self.get_hit_box(x=new_position.x, y=new_position.y)
 
     def try_move(self, max_width: int, max_height: int) -> bool: 
         keys = key.get_pressed()
@@ -55,8 +43,8 @@ class Player:
         return moved
 
 
-    def move(self, screen: Surface) -> None:
-        if self.try_move(screen.get_width(), screen.get_height()):
+    def move(self, screen_size: Dimensions) -> None:
+        if self.try_move(screen_size.x, screen_size.y):
             # Keep player within screen bounds
             self.hit_box = self.get_hit_box(self.x, self.y)
 
