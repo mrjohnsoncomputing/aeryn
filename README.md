@@ -5,6 +5,7 @@ The project structure represents a typical python module file strucutre, and is 
 If you would like to run this project, you will need to do the following:
 
 Clone this repository to your local machine
+
 Navigate to `aeryn/mini_project`
 
 Create a virtual environment:
