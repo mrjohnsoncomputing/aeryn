@@ -1,0 +1,35 @@
+from random import randint
+from pygame.transform import scale
+from pygame import Surface, Rect
+
+class Target:
+    def __init__(self, screen_width: float, screen_height: float, image: Surface):
+        self.width = randint(20, 40)  # Random size for variety
+        self.x: float = randint(0, screen_width - self.width)
+        self.y: float = randint(0, screen_height - self.width)
+        self.x_speed: int = randint(-3, 3)
+        self.y_speed: int = randint(-3, 3)
+        self.scaled_image: Surface = scale(image, (self.width, self.width))
+        self.hit_box: Rect = self.get_hit_box()
+        self.is_eaten = False
+
+    def get_eaten(self) -> None:
+        self.is_eaten = True
+
+    def get_hit_box(self) -> Rect:
+        return self.scaled_image.get_rect(center=(self.x, self.y))
+
+    def draw(self, screen: Surface) -> None:
+        self.hit_box = self.get_hit_box()
+        screen.blit(self.scaled_image, self.hit_box.topleft)
+
+
+    def move(self, screen_width: float, screen_height: float) -> None:
+        self.x += self.x_speed
+        self.y += self.y_speed
+        
+        # Reverse direction upon hitting a wall
+        if self.x <= 0 or self.x >= screen_width:
+            self.x_speed = -self.x_speed
+        if self.y <= 0 or self.y >= screen_height:
+            self.y_speed = -self.y_speed
