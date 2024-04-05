@@ -9,22 +9,22 @@ class Target:
         self.y: float = randint(0, screen_height - self.width)
         self.x_speed: int = randint(-3, 3)
         self.y_speed: int = randint(-3, 3)
-        self.target_image: Surface = scale(image, (self.width, self.width))
+        self.scaled_image: Surface = scale(image, (self.width, self.width))
         self.hit_box: Rect = self.get_hit_box()
         self.is_eaten = False
 
-    def get_eaten(self):
+    def get_eaten(self) -> None:
         self.is_eaten = True
 
-    def get_hit_box(self):
-        return self.target_image.get_rect(center=(self.x, self.y))
+    def get_hit_box(self) -> Rect:
+        return self.scaled_image.get_rect(center=(self.x, self.y))
 
-    def draw(self, screen: Surface):
+    def draw(self, screen: Surface) -> None:
         self.hit_box = self.get_hit_box()
-        screen.blit(self.target_image, self.hit_box.topleft)
+        screen.blit(self.scaled_image, self.hit_box.topleft)
 
 
-    def move(self, screen_width: float, screen_height: float):
+    def move(self, screen_width: float, screen_height: float) -> None:
         self.x += self.x_speed
         self.y += self.y_speed
         

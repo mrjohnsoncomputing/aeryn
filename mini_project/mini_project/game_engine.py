@@ -96,7 +96,6 @@ class GameEngine:
                         
                         targets = self.create_targets(count=5)  # Reinitialize targets
 
-
                 if pygame_event.type == QUIT:
                     self.is_running = False
 
@@ -109,7 +108,6 @@ class GameEngine:
                 target.move(screen_height=self.screen_height, screen_width=self.screen_width)
                 target.draw(screen=self.screen)
                 
-
                 self.display_debug_info(entity=target, offset=30 * offset_multiplier)
                 offset_multiplier += 1
 
